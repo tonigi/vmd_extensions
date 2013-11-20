@@ -1,0 +1,249 @@
+## page was renamed from toni/MolecularIterators
+= VMD extension functions =
+
+This is a collection of TCL-VMD functions that support extraction of structural data from large-scale simulations. These functions are currently meant for TCL-VMD programmers.  Features easy semantics to
+
+ * Iterate a block of code over frames
+ * Iterate a block of code over trajectory files
+ * Compute the number and fraction of native contacts
+ * Compute distance matrices
+ * ...and more
+
+Please refer to the following table of contents for the full feature list. (''Note'': If you are looking for a GUI to compute the number of native contats, please see the [[utilities/RMSDTTNC|RMSD trajectory tool enhanced with native contacts]] plugin.)
+
+<<TableOfContents(2)>>
+
+
+
+
+(c) 2010 toni.giorgino a gmail.com
+
+== Compute the number of native contacts ==
+
+Computation of the number of native contacts requires two steps: (1) creation of a "reference" list, i.e.  the native state; (2) the actual measurement. In the current version, both should come from the same structure. Contacts is based on VMD's ''measure contacts'' feature and therefore can be performed on one (intra-molecular) or two (inter-molecular) selections. 
+
+For a GUI to compute native contacts, see the new [[toni/RMSDTTNC|RMSD trajectory tool + NC extension]].
+
+Limitations: 
+ * For native contacts, the "reference" structure must be equivalent  to the one to be analyzed (same # of atoms)
+
+
+
+== Iterate a TCL block over a set of files ==
+
+ * '''forFiles filename *.dcd { ... }''' 
+
+   Iterator over files matched by the given pattern. The matched files are loaded in sequence, sorted in [[http://sourcefrog.net/projects/natsort/|natural order]], and the block is executed. When executing the block, the first argument is set to the current file name (note that, like '''for''', it does not require the dollar symbol).  For example:
+{{{
+       forFiles fn {*.dcd} {
+             puts "$fn has [ molinfo top get numframes ] frames" 
+       }
+}}}
+
+
+== Iterate a TCL block over all frames ==
+
+ * '''forFrames frameno $selection  { ... }''' 
+
+   Iterator over frames in the current selection.  While in ''block'', the first argument is set to the (integer) current frame number. The selection is used to get the frame range, and is automatically set with  "frame" before executing the block.    Note that, like '''for''', the variable name does not require the dollar symbol. 
+
+{{{
+    forFrames fno $sel { 
+          puts "$fno: [measure rgyr $sel ]" 
+    }
+}}}
+
+   ''Notes.'' If the selection is subject to changes between frames, please perform a "$sel update" inside the block. If you are using more than one selection, pass only the first as an argument and, if necessary, update the others inside the block.  
+
+
+== Compute distance matrices ==
+
+You can compute distance matrices like this 
+
+ * '''residueDistanceMatrix { sel1 sel2 }'''
+
+    Given two atom selection, return the distance matrix (in longitudinal form: {{{ { { r1 r2 dist} ... }  }}} ) between residues in given  selections. All selected atoms will be  considered for each residue, and the minimum distance per residue  pair returned. This can be slow. If using only an atom per residue (eg CA),  consider using atomDistanceMatrix for speed. Residues are taken from the ''resid'' attribute. 
+
+ * '''atomDistanceMatrix { sel1 sel2 }'''
+
+   Return the atom distance matrix (in longitudinal form: { { r1 r2  dist} ... } ) between residues in given selections.  There should be  only one atom per residue in the selection.  Residues are taken from the ''resid'' attribute. 
+
+ * '''residueDistanceMatrixApprox {sel1 sel2 bins}''' 
+   
+  Similar to residueDistanceMatrix, but much faster implementation  which returns a discrete distance (taken from the bins  list).  For each residue pair, the distance will be the next  higher value in {bins}. Runtime is O([llength $bins])
+
+
+
+
+== Load multiple files ==
+
+ * '''loadFrames *.dcd'''
+
+   Load, in sequence, all files matching the given pattern. Currently loaded frames are removed. Files are sorted in natural order (i.e. ''xx-3.dcd'' comes before ''xx-11.dcd'').
+
+ * '''appendFrames *.dcd'''
+
+   As above, except that current frames are not discarded.
+
+
+
+
+== Renumber residues ==
+
+ * '''renumber [atomselect top "chain A"] 110'''
+
+   Renumbers the residues in the atom selection so that they start from the given integer. Useful to re-match standard numbering. Note that if there are duplicate residue IDs (e.g. in the case of homo-multimers), the renumbered IDs will also be duplicate. 
+
+ * '''renumber_from_1 $sel'''
+
+   Renumbers residues starting from 1, just as '''tleap''' does. Note that '''all''' residues will be renumbered irrespective of their original ''resid''. As a consequence, the identity of homo-multimers will be lost.
+
+== Geometry handling ==
+
+ * '''swap $sel1 $sel2'''
+
+   Exchange the positions of two atomselections (based on their centers)
+
+ * '''helicity $sel1 [ $tolerance ] '''
+
+   Count the fraction of residues that have phi/psi in the canonical alpha region of the Ramachandran plot (&phi;,&psi;)=(-57,-47). Pass a selection of CA only.  The ''tolerance''  argument sets the allowed slack (default 40 degrees). The result is normalized to 1.0 for a fully alpha-helical segment.
+
+ * '''helicity_3 $sel1 [ $tolerance ] '''
+
+   Count helicities as in: Kelley J Mol Biol. 2009 May 22; 388(5):919–927.  At least 3 residues within the canonical Ramachandran alpha region are required to count one. Pass a selection of CA only. The result is normalized to 1.0 for a fully alpha-helical segment.
+ 
+
+
+
+== File conversions ==
+
+ * '''writePDBTER $sel filename.pdb'''
+
+   Write a PDB file containing TER cards to separate fragments. This is useful for software like ''tleap'' which requires them. ''$sel'' must be an atom-selection function (as returned by atomselect). For a fuller implementation, see also [[utilities/PdbTer]].
+
+
+
+ * '''writePlumed $sel out.pdb'''
+
+   Write a PDB file using charges and masses in the topology (required by PLUMED's "driver" utility). For a full interface to PLUMED's CV capabilities, see the [[utilities/PlumedCVTool|PLUMED collective variable analysis tool]].
+
+ * '''writePQR $sel out.pqr'''
+
+   Write a crude PQR file using radiuses and masses in the topology (dangerous! use pdb2pqr instead!)
+
+
+== Table-handling ==
+
+ * '''printArray table [prefix] [channel]'''
+
+  Pretty-print a 2D array (list of lists). Each line is prepended by the optional "extra" argument, a string, and output on the given  channel (stdout if not given).
+
+ * '''reshapeToWide  table '''
+
+   Reshape a matrix in "long" format, such as the ones returned by the distance matrix functions, into a "wide" (rectangular) format. The first column will be used as row index, the second as column. They must repeat in the same order.
+
+ * '''transpose array'''
+
+   Transpose a 2D array.
+
+== Plotting ==
+
+ * '''qplot list [list]'''
+
+   Plot the given list with multiplot. If two vectors are given, they are interpreted as ''x'' and ''y'' values respectively.
+
+ * '''qhist nbins list'''
+
+   Compute and plot the histogram of the values in the ''list'' passed as a second argument, binned in ''nbins'' equal-sized bins. Returns a list of two lists, the former being lower boundaries for the bins, and the latter are then counts.
+
+
+== Process multiple files in-memory ==
+
+(experimental) Sometimes it's advantageous to process in-memory a large trajectory that came from several different files, but keep the separate identities.  This can be accomplished  like this:
+
+{{{
+   set gi [loadFrameGroup *.dcd 10]
+   forFrameGroup i g $gi { puts "$i $g ..." }
+}}}
+
+
+= Examples =
+
+
+== Native contacts ==
+
+A (purposedly verbose) example for computing native contacts.
+
+{{{
+        ## The atom selection
+	set chaina [ atomselect top "chain A and name CA" ]
+
+        ## Use first trajectory frame as a reference
+	$chaina frame 0
+	set ref [ prepareNativeContacts 7 $chaina ]
+
+        ## Get the number of native contacts (for computing their fraction)
+	set nnc [ llength $ref ]
+	puts "There are $nnc contacts in the native state"
+
+                    # Now, for each frame,
+	forFrames fno $chaina {
+                    # compute number of native contacts,
+		set nc [measureNativeContacts $ref 7 $chaina]  
+                    # their fraction,
+		set qnc [ expr 100.0 * $nc / $nnc ]
+                    # and print both.
+		puts [ format "Frame %d: %f, %.3f%%" $fno $nc $qnc ]
+	}
+}}}
+
+== Secondary structure ==
+
+Iterating over frames
+
+{{{
+    forFrames fn $kid {
+        animate goto $fn
+        mol ssrecalc [$kid molid]
+        puts "$fn [vecmean [$kid get alpha_helix]]" 
+    }
+}}}
+
+
+== RMSD for all files (in a directory) and frames ==
+
+Variables {{{$compare}}} and {{{$reference}}} should be two atomselections in different molecules. The former should be the TOP molecule.
+
+{{{ 
+forFiles id {../filtered/*.dcd} {
+    set outch [open $id.rmsd w]
+    forFrames fn $compare {
+	set trans_mat [measure fit $compare $reference]
+	$compare move $trans_mat
+	set rmsd [measure rmsd $compare $reference]
+	puts $outch "$rmsd $id $fn"
+    }
+    close $outch
+}
+}}}
+
+
+
+= Installation =
+
+ 1. Locate the {{{scripts}}} folder under your VMD installation directory and create a directory named {{{init.d}}} (if not already there).
+ 1. Download the source here [[attachment:VMDextensions.tcl]] and copy it in the newly-created directory.
+
+
+
+
+== Licensing ==
+
+By downloading the software you agree to comply with the terms of GPL version 2. 
+
+
+== Acknowledgments ==
+
+Work supported by the VPH-NoE
+
+{{http://img191.imageshack.us/img191/496/vphlogo.png}}
