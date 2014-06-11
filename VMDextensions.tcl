@@ -1,81 +1,145 @@
-## $Id: VMDextensions.tcl 1033 2012-07-20 14:11:12Z toni $
+##\mainpage VMD extension functions
+# 
+# This is a collection of TCL-VMD functions that support extraction
+# of structural data from large-scale simulations. These functions
+# are currently meant for TCL-VMD programmers.  Features easy
+# semantics to
+#
+#  * Iterate a block of code over frames
+#  * Iterate a block of code over trajectory files
+#  * Compute the number and fraction of native contacts
+#  * Compute distance matrices
+#  * ...and more
+# 
+# Please refer to the table of contents for the full feature
+# list. 
+# 
+# License
+# =======
+#
+# Copyright (c) 2010-2014
+# Universitat Pompeu Fabra (UPF) and National Research Council of Italy (CNR). 
+# Author:  toni.giorgino  isib cnr it.
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version. 
+# 
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+# 
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>. 
+#
+#
+# Examples
+# ========
+# 
+# Native contacts 
+# ---------------
+#
+# Computation of the number of native contacts requires two steps:
+# (1) creation of a "reference" list, i.e.  the native state; (2)
+# the actual measurement. In the current version, both should come
+# from the same structure. Contacts is based on VMD's *measure
+# contacts* feature and therefore can be performed on one
+# (intra-molecular) or two (inter-molecular) selections. 
+# 
+# For a GUI to compute native contacts, see the 
+# [RMSD trajectory tool + NC extension](http://www.multiscalelab.org/utilities/RMSDTTNC).
+# 
+# Limitations: 
+#  * For native contacts, the "reference" structure must be equivalent  to the one to be analyzed (same # of atoms)
+# 
+# Example usage:
+# \code 
+#      set chaina [ atomselect top "chain A" ];
+#      set ref [ prepareNativeContacts 7 $chaina ];
+#      # (go or select the frame of interest)
+#      measureNativeContacts $ref 7 $chaina;
+# \endcode
+# 
+# Another (deliberately verbose) example:
+# \code
+#       ## The atom selection
+#       set chaina [ atomselect top "chain A and name CA" ]
+# 
+#       ## Use first trajectory frame as a reference
+#       $chaina frame 0
+#       set ref [ prepareNativeContacts 7 $chaina ]
+# 
+#       ## Get the number of native contacts (for computing their fraction)
+#       set nnc [ llength $ref ]
+#       puts "There are $nnc contacts in the native state"
+# 
+#                     # Now, for each frame,
+#       forFrames fno $chaina {
+#                     # compute number of native contacts,
+#               set nc [measureNativeContacts $ref 7 $chaina]  
+#                     # their fraction,
+#               set qnc [ expr 100.0 * $nc / $nnc ]
+#                     # and print both.
+#               puts [ format "Frame %d: %f, %.3f%%" $fno $nc $qnc ]
+#       }
+# \endcode
+#
+#
+#
+# 
+# Iterating over frames
+# -------------------
+#
+# Iterate and compute secondary structure:
+# \code
+#     forFrames fn $kid {
+#         animate goto $fn
+#         mol ssrecalc [$kid molid]
+#         puts "$fn [vecmean [$kid get alpha_helix]]" 
+#     }
+# \endcode
+# 
+# RMSD for all files (in a directory) and frames
+# ----------------------------------------------
+#
+# Variables \c $compare and \c $reference should be two atomselections
+# in different molecules. The former should be the TOP molecule.
+#
+# \code
+#     forFiles id {../filtered/ *.dcd} {
+#         set outch [open $id.rmsd w]
+#         forFrames fn $compare {
+#             set trans_mat [measure fit $compare $reference]
+#             $compare move $trans_mat
+#             set rmsd [measure rmsd $compare $reference]
+#             puts $outch "$rmsd $id $fn"
+#         }
+#         close $outch
+#     }
+# \endcode
 
-### = VMD extension functions =
-### 
-### This is a collection of TCL-VMD functions that support extraction
-### of structural data from large-scale simulations. These functions
-### are currently meant for TCL-VMD programmers.  Features easy
-### semantics to
-###
-###  * Iterate a block of code over frames
-###  * Iterate a block of code over trajectory files
-###  * Compute the number and fraction of native contacts
-###  * Compute distance matrices
-###  * ...and more
-### 
-### Please refer to the following table of contents for the full
-### feature list. (''Note'': If you are looking for a GUI to compute
-### the number of native contats, please see the
-### [[utilities/RMSDTTNC|RMSD trajectory tool enhanced with native contacts]] plugin.)
-### 
-### <<TableOfContents(2)>>
-### 
-
-# License ------------------------------
-
-###
-### Copyright (c) 2010-2012 
-### Universitat Pompeu Fabra (UPF) and National Research Council of Italy (CNR). 
-### Author:  <<MailTo(toni.giorgino AT isib DOT cnr DOT it)>> . 
-###
-### By downloading the software you agree to comply with the terms of
-### GPL version 2.
-###
-### This program is free software: you can redistribute it and/or modify
-### it under the terms of the GNU General Public License as published by
-### the Free Software Foundation, either version 3 of the License, or
-### (at your option) any later version. 
-### 
-### This program is distributed in the hope that it will be useful,
-### but WITHOUT ANY WARRANTY; without even the implied warranty of
-### MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-### GNU General Public License for more details.
-### 
-### You should have received a copy of the GNU General Public License
-### along with this program.  If not, see <http://www.gnu.org/licenses/>. 
-
-# Version --------------------
-
-###ID
-### from {{{ $Id: VMDextensions.tcl 1033 2012-07-20 14:11:12Z toni $ }}}
 
 
-
-# Acknowledgments ------------------------------
-### Work partially supported by the VPH-NoE and the Generalitat de Catalunya.
-
-### = Functions =
-
-# Iterate a TCL block over all frames ------------------------------
-
-
-#  Iterator over frames in the current selection.  While in ''block'',
+##\name Iterate a TCL block over all frames
+#@{
+##  Iterator over frames in the current selection.  While in ''block'',
 #  the first argument is set to the (integer) current frame
 #  number. The selection is used to get the frame range, and is
 #  automatically set with "frame" before executing the block.  Note
 #  that, like '''for''', the variable name does not require the dollar
 #  symbol.  Example:
-# {{{
-#     forFrames fno $sel { 
+# 
+#        forFrames fno $sel { 
 #           puts "$fno: [measure rgyr $sel ]" 
-#     }
-# }}}
+#        }
+# 
 #
-# ''Notes.'' If the selection is subject to changes between frames,
+# *Note.* If the selection is subject to changes between frames,
 # please perform a "$sel update" inside the block. If you are using
 # more than one selection, pass only the first as an argument and, if
 # necessary, update the others inside the block.
-
 proc forFrames {framenum sel block {step 1}} {
     upvar 1 $framenum pwvar
     set n [ molinfo [$sel molid] get numframes ]
@@ -86,7 +150,7 @@ proc forFrames {framenum sel block {step 1}} {
     }
 }
 
-# Similar to forFrames (in fact it is a plug-in replacement). If the
+## Similar to forFrames (in fact it is a plug-in replacement). If the
 # block returns a value, also builds a list with the returned values.
 proc forFramesMeasure {framenum sel block} {
     upvar 1 $framenum pwvar
@@ -99,23 +163,22 @@ proc forFramesMeasure {framenum sel block} {
     }
     return $r
 }
+#@}
 
+# ----------------------------------------
 
-# Iterate a TCL block over a set of files  ------------------------------------
-
-# Iterator over files matched by the given pattern. The matched files
+##\name Iterate a TCL block over a set of files
+#@{
+## Iterator over files matched by the given pattern. The matched files
 # are loaded in sequence, sorted in
-# [[http://sourcefrog.net/projects/natsort/|natural order]], and the
+# [natural order](http://sourcefrog.net/projects/natsort/), and the
 # block is executed. When executing the block, the first argument is
-# set to the current file name (note that, like '''for''', it does not
+# set to the current file name (note that, like *for*, it does not
 # require the dollar symbol).  For example:
-# {{{
+# 
 #       forFiles fn {*.dcd} {
-#             puts "$fn has [ molinfo top get numframes ] frames" 
-#       }
-# }}}
-
-
+#             puts "$fn has [ molinfo top get numframes ] frames"
+#       } 
 proc forFiles {filename pattern block} {
     set contents [lsort -dictionary [glob  $pattern ]]
     upvar 1 $filename pwvar
@@ -130,12 +193,12 @@ proc forFiles {filename pattern block} {
 }
 
 
-
-
 # Iterate over chains matched in the named pattern prefix, a la
 # GPUGRID.  Will discard currently-loaded frames!
 #
-#   forChains chain {../results} { puts "DCD files prefixed with $chain have [ molinfo top get numframes ] frames" }
+#       forChains chain {../results} {
+#              puts "DCD files prefixed with $chain have [ molinfo top get numframes ] frames" 
+#       }
  proc forChains {chain dir block} {
     set allfiles [glob -tails -directory $dir *.dcd ]
     foreach fn $allfiles { lappend allnames [ lindex [ split $fn - ] 0 ] }
@@ -152,36 +215,16 @@ proc forFiles {filename pattern block} {
     }
     animate delete all
 }
+#@}
+
+# ----------------------------------------
 
 
 
+##\name Compute the number of native contacts
 
-
-
-# Compute the number of native contacts ---------------------------
-
-### Computation of the number of native contacts requires two steps:
-### (1) creation of a "reference" list, i.e.  the native state; (2)
-### the actual measurement. In the current version, both should come
-### from the same structure. Contacts is based on VMD's ''measure
-### contacts'' feature and therefore can be performed on one
-### (intra-molecular) or two (inter-molecular) selections. 
-### 
-### For a GUI to compute native contacts, see the new
-### [[toni/RMSDTTNC|RMSD trajectory tool + NC extension]].
-### 
-### Limitations: 
-###  * For native contacts, the "reference" structure must be equivalent  to the one to be analyzed (same # of atoms)
-### 
-### Example usage:
-### {{{
-###  set chaina [ atomselect top "chain A" ];
-###  set ref [ prepareNativeContacts 7 $chaina ];
-###      (go or select the frame of interest)
-###  measureNativeContacts $ref 7 $chaina;
-### }}}
-
-# Given the frame, compute whether each residue in query is making
+#@{
+## Given the frame, compute whether each residue in query is making
 # contact (< cutoff) with target. Return list like { { R1 0 } {R2 1 }
 # ... } where R1, R2 etc belong to query
 proc residueContacts {cutoff query target} {
@@ -270,8 +313,7 @@ proc residueContactPairs { cutoff sel1 sel2 } {
 # Return a matrix (as a serialized array) with the time for first
 # contact of each contact pair. Times may be missing if they never do
 # a first contact! Example:
-#  set fctm [firstContactTimeMatrix 5 $a $b]
-#  
+#       set fctm [firstContactTimeMatrix 5 $a $b]
 proc firstContactTimeMatrix { cutoff sel1 sel2 } {
     set res {}
     forFrames fn $sel1 {
@@ -294,21 +336,19 @@ proc firstContactTimeMatrix { cutoff sel1 sel2 } {
 
 
 
-
-
-
 # Prepare the "reference" list of native contacts, e.g. from the
 # crystal structure. Return value: a list of native contact pairs
 # (only useful to be passed as an argument to measureNativeContacts,
-# or to get its length)
-
-# Note. The function is subject to change. Later can save sizes of
+# or to get its length).
+#
+# *Note.* The function is subject to change. Later can save sizes of
 # atomselections (for safety checking) and/or cutoff. 
-
 proc prepareNativeContacts { cutoff sel1 {sel2 0} } {
     if { $sel2 == 0 } { set sel2 $sel1 }
     return [ transpose [ measure contacts $cutoff $sel1 $sel2 ] ]
 }
+
+# TBD.
 proc measureNativeContacts { nclist cutoff sel1 {sel2 0} } {
 	set n 0
 	if { $sel2 == 0 } { set sel2 $sel1 }
@@ -323,20 +363,22 @@ proc measureNativeContacts { nclist cutoff sel1 {sel2 0} } {
 	return $n
 }
 
+#@}
 
 
+# ----------------------------------------
 
 
-# Compute distance matrices ------------------------------
+##\name Compute distance matrices
+#@{
 
-
-# Given two atom selection, return the distance matrix (in
-# longitudinal form: {{{ { { r1 r2 dist} ... }  }}} ) between residues
+## Given two atom selection, return the distance matrix (in
+# longitudinal form: <tt>{ { r1 r2 dist} ... }</tt> ) between residues
 # in given selections. All selected atoms will be considered for each
 # residue, and the minimum distance per residue pair returned. This
 # can be slow. If using only an atom per residue (eg CA), consider
 # using atomDistanceMatrix for speed. Residues are taken from the
-# ''resid'' attribute.
+# *resid* attribute.
 proc residueDistanceMatrix { sel1 sel2 } {
     set r {}
     
@@ -354,13 +396,11 @@ proc residueDistanceMatrix { sel1 sel2 } {
 }
 
 
-
-
-# Similar to residueDistanceMatrix, but much faster implementation
+## Similar to residueDistanceMatrix, but much faster implementation
 # which returns a discrete distance (taken from the bins
 # list).  For each residue pair, the distance will be the next
 # higher value in {bins}. Runtime is O([llength $bins]). Returns a 
-# list of { {rid1 rid2 dist} ... }
+# list of <tt>{ {rid1 rid2 dist} ... }</tt>
 proc residueDistanceMatrixApprox { sel1 sel2 bins } {
     array set rp {}
     array set idx1res {}
@@ -403,7 +443,7 @@ proc residueDistanceMatrixApprox { sel1 sel2 bins } {
 
 
 
-# Return the atom distance matrix (in longitudinal form: { { r1 r2
+## Return the atom distance matrix (in longitudinal form: { { r1 r2
 # dist} ... } ) between residues in given selections.  There should be
 # only one atom per residue in the selection. Residues are taken from
 # the ''resid'' attribute.
@@ -424,17 +464,19 @@ proc atomDistanceMatrix { sel1 sel2 } {
 
 
 
-# Compute the distance profile between a ligand and a protein, i.e.,
+## Compute the distance profile between a ligand and a protein, i.e.,
 # by timestep and residue, the minimum distance between the two.
 # Requires two atomselections (likely from the same molecule) and an
 # optional list of distance bins. Returns a list of { { frame
 # resid_lig resid_prot distance } ... } . This can be post-processed
-# to compute all kind of profiles and istance matrices.
-# {{{
-#  Usage: set tt [distanceProfileFull $b $a]; true
-#         set ttf [open tt1.dat w]; printTable $tt "" $ttf; close $ttf
-#  or:    set ttf [open tt2.dat w]; printTable [reshapeToWide $tt] "" $ttf; close $ttf
-# }}}
+# to compute all kind of profiles and istance matrices. Usage:
+# 
+#      set tt [distanceProfileFull $b $a]; true  
+#      set ttf [open tt1.dat w]; printTable $tt "" $ttf; close $ttf 
+#  or:
+#
+#      set ttf [open tt2.dat w]; printTable [reshapeToWide $tt] "" $ttf; close $ttf
+#
 proc distanceProfileFull {lig prot {step 1} {dbins "2 3 4 5 6 7 10" }} {
     # count the number of protein residues
     set nligresid [llength [lsort -uniq -integer [$lig get resid]]]; 
@@ -459,19 +501,17 @@ proc distanceProfileFull {lig prot {step 1} {dbins "2 3 4 5 6 7 10" }} {
 
 
 
-
-
-
-
-# Compute the distance profile between a ligand and a protein, i.e.,
+## Compute the distance profile between a ligand and a protein, i.e.,
 # by timestep and residue, the minimum distance between the two.
 # Requires two atomselections (likely from the same molecule) and an
 # optional list of distance bins. Returns a list of { { frame resid
-# distance } ... }
-# <<BR>>
-#  Usage: set tt [distanceProfile $b $a]; true
+# distance } ... }. Usage:
+#
+#         set tt [distanceProfile $b $a]; true
 #         set ttf [open tt1.dat w]; printTable $tt "" $ttf; close $ttf
-#  or:    set ttf [open tt2.dat w]; printTable [reshapeToWide $tt] "" $ttf; close $ttf
+#  or:
+#
+#         set ttf [open tt2.dat w]; printTable [reshapeToWide $tt] "" $ttf; close $ttf
 proc distanceProfile {lig prot {dbins "2 3 4 5 6 7 10" }} {
     # count the number of protein residues
     set nprotresid [llength [lsort -uniq -integer [$prot get resid]]]; 
@@ -499,11 +539,15 @@ proc distanceProfile {lig prot {dbins "2 3 4 5 6 7 10" }} {
     return $omat
 }
 
+#@}
 
 
-# Quick plots --------------------------------------------------
+# ----------------------------------------
 
-# Quick plot function. Takes either a list of y values, or two lists,
+
+##\name Quick plots
+#@{
+## Quick plot function. Takes either a list of y values, or two lists,
 # with x and y values.  If two vectors are given, they are interpreted
 # as ''x'' and ''y'' values respectively.
 proc qplot { li { ly 0}  } {
@@ -516,7 +560,7 @@ proc qplot { li { ly 0}  } {
     }
 }
 
-# Compute and plot the histogram of the values in the ''list'' passed
+## Compute and plot the histogram of the values in the ''list'' passed
 # as a second argument, binned in ''nbins'' equal-sized bins. Returns
 # a list of two lists, the former being lower boundaries for the bins,
 # and the latter are then counts.
@@ -541,13 +585,15 @@ proc qhist { bins li } {
     return [list $x0 $h]
 }
 
+#@}
 
 
+# ----------------------------------------
 
-#  Load multiple files --------------------------------------------------
+##\name  Load multiple files
+#@{
 
-
-# Usage:  loadFrames 53-*.coor
+## Usage:  loadFrames 53-*.coor
 # Will load all files starting with 53 (coordinates, dcd, whatever) in natural sort
 # e.g. 44-bla-2-100.coor < 44-bla11-100.coor
 proc loadFrames {pattern} {
@@ -557,7 +603,7 @@ proc loadFrames {pattern} {
 
 
 
-# Usage: loadFrames 53-*.coor Will load all files starting with 53
+## Usage: loadFrames 53-*.coor Will load all files starting with 53
 # (coordinates, dcd, whatever) in natural sort e.g. 44-bla-2-100.coor
 # < 44-bla11-100.coor Error handling is tricky. The
 # /tmp/appendFrames.[pid].log will be true in any case. The ... .ff
@@ -585,7 +631,7 @@ proc appendFrames {pattern} {
 }
 
 
-# Identify current Frame
+## Identify current Frame
 proc identifyFrame {} {
     set r -1
     set ifile [open /tmp/appendFrames.[pid].log r]
@@ -599,13 +645,16 @@ proc identifyFrame {} {
     return $r
 }
 
+#@}
+
+# ----------------------------------------
 
 
 
+##\name Renumber residues
+#@{
 
-# Renumber residues ----------------------------
-
-# Renumbers the residues in the atom selection so that they start from
+## Renumbers the residues in the atom selection so that they start from
 # the given integer. Useful to re-match standard numbering. Note that
 # if there are duplicate residue IDs (e.g. in the case of
 # homo-multimers), the renumbered IDs will also be duplicate.
@@ -623,7 +672,7 @@ proc renumber { sel start } {
 	$sel set resid $nresid
 }
 
-# Renumbers residues starting from 1, just as '''tleap''' does. Note
+## Renumbers residues starting from 1, just as '''tleap''' does. Note
 # that '''all''' residues will be renumbered irrespective of their
 # original ''resid''. As a consequence, the identity of homo-multimers
 # will be lost.
@@ -641,12 +690,17 @@ proc renumber_from_1 { sel } {
 	$sel set resid $nresid
 }
 
+#@}
+
+# ----------------------------
 
 
-# Structural analysis and geometry ------------------
+
+##\name Structural analysis and geometry
+#@{
 
 
-# Count the fraction of residues that have phi/psi in the canonical
+## Count the fraction of residues that have phi/psi in the canonical
 # alpha region of the Ramachandran plot (&phi;,&psi;)=(-57,-47). Pass
 # a selection of CA only.  The ''tolerance'' argument sets the allowed
 # slack (default 40 degrees). The result is normalized to 1.0 for a
@@ -672,7 +726,7 @@ proc helicity { sel { tol 40 } } {
 
 
 
-# Count helicities as in: Kelley J Mol Biol. 2009 May 22;
+## Count helicities as in: Kelley J Mol Biol. 2009 May 22;
 # 388(5):919–927.  At least 3 residues within the canonical
 # Ramachandran alpha region are required to count one. Pass a
 # selection of CA only. The result is normalized to 1.0 for a fully
@@ -707,7 +761,7 @@ proc helicity_3 { sel { tol 40 } { debug 0 } } {
     return [ expr $nh / ($n-2) ]
 }
 
-# Refine an atom selection: return a new atomselection consisting of
+## Refine an atom selection: return a new atomselection consisting of
 # the atoms in the old one, as long as they ALSO match the selection
 # text txt
 proc atomselectRefine {sel txt} {
@@ -719,7 +773,7 @@ proc atomselectRefine {sel txt} {
 }
 
 
-# Return a zero-centered version of the input list
+## Return a zero-centered version of the input list
 proc veccenter {l} {
     set m [vecmean $l]
     set N [llength $l]
@@ -728,14 +782,14 @@ proc veccenter {l} {
     return $r
 }
 
-# Returns the angle between two vectors
+## Returns the angle between two vectors
 proc vecangle {d1 d2} {
 	set cosangle [expr [vecdot $d1 $d2]/[veclength $d1]/[veclength $d2]]
 	return [expr acos($cosangle)*180./3.141592653589793]
 }
 
 
-# Return the matrix which reorients the principal axes of inertia with
+## Return the matrix which reorients the principal axes of inertia with
 # x, y, z. The largest inertia axis will be aligned along z.
 proc transinertia {sel} {
 	set m [lindex [measure inertia $sel] 1]
@@ -747,7 +801,7 @@ proc transinertia {sel} {
 	return $m4
 }
 
-# Return the center of the bounding box for the selection $sel.
+## Return the center of the bounding box for the selection $sel.
 proc boundingBoxCenter {sel} {
 	set bb [measure minmax $sel]
 	set a [lindex $bb 0] 
@@ -763,7 +817,7 @@ proc boundingBoxCenter {sel} {
 
 
 
-# Compute the minimum distance between atoms in selections s1 and s2
+## Compute the minimum distance between atoms in selections s1 and s2
 proc minDist {s1 s2} {
     set md 1e6
     foreach i1 [$s1 get index] {
@@ -781,7 +835,8 @@ proc minDist {s1 s2} {
     return $md
 }
 
- proc doudouVolume {dx dy dz kx ky kz {kbt 0.59}} {
+#\private TBD
+proc doudouVolume {dx dy dz kx ky kz {kbt 0.59}} {
     set pi 3.14159265358979
     set dx1  [expr $dx + sqrt(2*$pi*$kbt/$kx) ]
     set dy1  [expr $dy + sqrt(2*$pi*$kbt/$ky) ]
@@ -789,12 +844,12 @@ proc minDist {s1 s2} {
     return [expr $dx1 * $dy1 * $dz1 ]
 }
 
+#@}
 
+# --------------------------------
 
-
-
-# Structural manipulation --------------------------------
-
+##\name Structural manipulation
+#@{
 
 # Mutate first and last residue of a selection so that tleap will turn them
 # into ACE and NME caps. "cap" may be "ACE", "NME", or "both" (default). 
@@ -821,7 +876,7 @@ proc addCaps { sel {cap both} } {
 }
 
 
-# Stronger version of addcaps - replaces whatever first and last atoms
+## Stronger version of addcaps - replaces whatever first and last atoms
 proc addCaps2 {sel {cap both}} {
 	set sl [lsort -integer -unique [$sel get index]]
 	set mid [$sel molid]
@@ -846,19 +901,21 @@ proc addCaps2 {sel {cap both}} {
 
 
 
-# Exchange the positions of two atomselections (based on their centers)
+## Exchange the positions of two atomselections (based on their centers)
 proc swap { s1 s2 } {
     set mm [ trans center [ measure center $s1 ] offset [ measure center $s2 ] ]
     $s1 move $mm
     $s2 move [ measure inverse $mm ]
 }
 
+#@}
 
 
+# -----------------------------------------
 
-# Root-mean square calculations  --------------------------------------------------
+##\name Root-mean square calculations 
 
-# Compute rmsd of all frames of sel wrt currently selected frame in
+## Compute rmsd of all frames of sel wrt currently selected frame in
 # ref. Per each frame, align ref1 to ref2, and measure RMSD of sel1
 # wrt sel2. sel1 and ref1 should belong to the same molecule (the
 # trajectory under study, multiple frames).  Sel2 and ref2 should
@@ -880,7 +937,7 @@ proc rmsdOf { sel1 sel2 ref1 ref2 } {
     return $rmsdlist
 }
 
-# Compute average rmsf by sliding windows of width win. RMSF will be
+## Compute average rmsf by sliding windows of width win. RMSF will be
 # averaged by weight.
 proc rmsfTrajectory {sel {win 10} {step 1}} {
     set n [ molinfo [$sel molid] get numframes ]
@@ -909,7 +966,7 @@ proc rmsfTrajectory {sel {win 10} {step 1}} {
 }
 
 
-# Compute average rmsf by sliding windows of width win. RMSF will be
+## Compute average rmsf by sliding windows of width win. RMSF will be
 # averaged by weight. Assign it to the "user" attribute at each frame.
 proc rmsfTrajectoryColor {sel {win 10}} {
     set n [ molinfo [$sel molid] get numframes ]
@@ -936,10 +993,14 @@ proc rmsfTrajectoryColor {sel {win 10}} {
     }
 }
 
+#@}
 
-# Format conversions --------------------------------------------------
+# ----------------------------
 
-# Write a crude PQR file using radiuses and masses in the topology
+
+##\name Format conversions
+
+## Write a crude PQR file using radiuses and masses in the topology
 # (radii may not be appropriate for APBS calculations! use pdb2pqr
 # instead!)  Note that this preserves the CHAIN id. VMD PQR loader
 # misparses the file.
@@ -954,7 +1015,7 @@ proc writePQR { sel filename } {
 }
 
 
-# Write a PDB file using charges and masses in the topology
+## Write a PDB file using charges and masses in the topology
 # (required by PLUMED's "driver" utility)
 proc writePlumed { sel filename } {
 	set oldbeta [ $sel get beta ]
@@ -966,7 +1027,7 @@ proc writePlumed { sel filename } {
 	$sel set occupancy $oldocc
 }
 
-# Write a PDB file to be used as a reference in PATH cvs.  Assumes
+## Write a PDB file to be used as a reference in PATH cvs.  Assumes
 # that occupancy and beta are set according to the align intentions.
 proc writePlumedRef { sel filename } {
     set oldsegid [$sel get segid]
@@ -996,7 +1057,7 @@ proc writePlumedRef { sel filename } {
 }
 
 
-# Write a PDB file containing TER cards to separate fragments. This is
+## Write a PDB file containing TER cards to separate fragments. This is
 # useful for software like ''tleap'' which requires them. ''$sel''
 # must be an atom-selection function (as returned by atomselect). For
 # a fuller implementation, see also [[utilities/PdbTer]].
@@ -1046,7 +1107,7 @@ proc writePDBTER { sel fname } {
 }
 
 
-# Write null velocity file corresponding to the current structure
+## Write null velocity file corresponding to the current structure
 proc writeNullVelFile {as fname} {
     set oxyz [$as get {x y z}]
     $as set x 0;
@@ -1056,18 +1117,16 @@ proc writeNullVelFile {as fname} {
     $as set {x y z} $oxyz
 }
 
-## proc writeZeroVelFile {n filename} {
-## 	set fp [open $filename w]
-## 	set m [expr $n*24]
-## 	puts -nonewline $fp [binary format "i1x$m" $n]
-## 	close $fp
-## }
+# proc writeZeroVelFile {n filename} {
+# 	set fp [open $filename w]
+# 	set m [expr $n*24]
+# 	puts -nonewline $fp [binary format "i1x$m" $n]
+# 	close $fp
+# }
 
 
 
-
-
-# Returns the 1-letter sequence of a selection (looking at CA only)
+## Returns the 1-letter sequence of a selection (looking at CA only)
 proc getFasta {osel} {
 	array set atable {
 		ALA	A		ARG	R
@@ -1108,18 +1167,13 @@ proc getFasta {osel} {
 	return $seq
 }
 
+#@}
 
 
 
-## ALIASES --------------------------------------------------
-
-#interp alias ata atomselect top all
-#interp alias at  atomselect top 
-
-
-# Save VMD representations  ------------------------------
-
-# Create a list of "mol" commands that reproduce the current top
+##\name Save VMD representations
+#@{
+## Create a list of "mol" commands that reproduce the current top
 # molecule display.
 proc dumpRepresentations {} {
  #    foreach fn [lindex [molinfo top get filename] 0] { 	puts "mol addfile $fn"     }
@@ -1135,19 +1189,20 @@ proc dumpRepresentations {} {
     }
     puts "  animate goto [molinfo top get frame]"
 }
+#@}
 
 
 
 
+#@{
 
-## Processing large trajectories in-memory ------------------------------------
+#\name Processing large trajectories in-memory
 
-
-# Process in-memory a large trajectory that came from several different files.
+##\private Process in-memory a large trajectory that came from several different files.
 # Something like
 #
-#   set gi [loadFrameGroup *.dcd 10];
-#   forFrameGroup i g $gi { puts "$i $g ..." }
+#        set gi [loadFrameGroup *.dcd 10];
+#        forFrameGroup i g $gi { puts "$i $g ..." }
  proc loadFrameGroups {pattern {step 1}} {
     set flist [lsort -dictionary [glob $pattern]]
     set nframes {}
@@ -1158,6 +1213,11 @@ proc dumpRepresentations {} {
     return [ list $flist $nframes ]
 }
 
+##\private Process in-memory a large trajectory that came from several different files.
+# Something like
+#
+#        set gi [loadFrameGroup *.dcd 10];
+#        forFrameGroup i g $gi { puts "$i $g ..." }
  proc forFrameGroups {framenum groupnum groupinfo  block} {
     upvar 1 $framenum  l_framenum
     upvar 1 $groupnum  l_groupnum
@@ -1179,14 +1239,15 @@ proc dumpRepresentations {} {
 	}
     }
 }
+#@}
+
+# ----------------------------------------
 
 
+##\name Matrix and list manipulation
+#@{
 
-# Matrix and list manipulation ----------------------------------------
-
-
-
-# Transpose a 2D table (list of lists). From [[http://wiki.tcl.tk/2748]]
+## Transpose a 2D table (list of lists). From [[http://wiki.tcl.tk/2748]]
 proc transpose {matrix} {
     set cmd list
     set i -1
@@ -1199,7 +1260,7 @@ proc transpose {matrix} {
 }
 
 
-# Sequence of integers from $from to $to, step by $step
+## Sequence of integers from $from to $to, step by $step
 proc lseq {from to {step 1}} {
     set ltmp {}
     for {set tmp $from} {$tmp<=$to} {incr tmp $step} {lappend ltmp $tmp}
@@ -1207,7 +1268,7 @@ proc lseq {from to {step 1}} {
 }
 
 
-# Given an array indexed by A,B pairs, return sorted row and column indices.
+## Given an array indexed by A,B pairs, return sorted row and column indices.
 proc arrayIndices { arr } {
     array set a $arr
     set names [array names a]
@@ -1221,7 +1282,7 @@ proc arrayIndices { arr } {
 
 
 
-# Pretty-print a 2D array (list of lists). Each line is prepended by
+## Pretty-print a 2D array (list of lists). Each line is prepended by
 # the optional "extra" argument, a string, and output on the given
 # channel (stdout if not given).
 proc printTable { ll { prepend "" } { ch stdout } { fmt "%s " } } {
@@ -1236,7 +1297,7 @@ proc printTable { ll { prepend "" } { ch stdout } { fmt "%s " } } {
 
 
 
-# Pretty-print an array, prepending rows and columns
+## Pretty-print an array, prepending rows and columns
 proc printArray { tmp  { prepend "" } { ch stdout } { fmt "%s " }  } {
     lassign $tmp tmp2 rl cl
     array set a $tmp2
@@ -1258,7 +1319,7 @@ proc printArray { tmp  { prepend "" } { ch stdout } { fmt "%s " }  } {
 
 
 
-# Reshape a matrix in "long" format into an array format.  No order is
+## Reshape a matrix in "long" format into an array format.  No order is
 # assumed. Returns a list containing: 1. the serialized array; 2. the
 # list of rows (first index); 3. the list of columns (second
 # index). This is a convenient matrix format for interchanging data.
@@ -1274,7 +1335,7 @@ proc reshapeLongToArray { table } {
     return [list [array get a] $rl $cl]
 }
 
-# Reshape array format into "wide".  No order is
+## Reshape array format into "wide".  No order is
 # assumed. 
 proc reshapeArrayToWide { tmp } {
     lassign $tmp tmp2 rl cl
@@ -1296,7 +1357,7 @@ proc reshapeArrayToWide { tmp } {
 }
 
 
-# Reshape a matrix in "long" format into a "wide" (rectangular) format
+## Reshape a matrix in "long" format into a "wide" (rectangular) format
 # The first column will be used as row index, the second as column.
 # No order is assumed
 proc reshapeLongToWide { table } {
@@ -1317,35 +1378,20 @@ proc reshapeArrayToLong { tmp } {
 }
 
 
-# Reshape a matrix in "long" format into a "wide" (rectangular) format
-# The first column will be used as row index, the second as column.
-# They must repeat in the same order. OBSOLETE.
- proc reshapeToWideOld { table } {
-    set tt [ transpose $table ]
-    set rows [lsort -unique -integer [ lindex $tt 0 ] ]
-    set columns [lsort -unique -integer [ lindex $tt 1 ] ]
-    set values [lindex $tt 2 ]
-    set nr [ llength $rows]
-    set nc [ llength $columns]
-    set out {}
-    for {set r 0} { $r < $nr } { incr r } {
-	lappend out [ lrange $values [expr $r * $nc ] [expr ($r+1) * $nc -1 ] ]
-    }
-    return $out
-}
+
+#@}
 
 
 
-
-## UTILITY --------------------------------------------------
+# UTILITY --------------------------------------------------
 
 # http://wiki.tcl.tk/10876
 # init.tcl
 # Copyright 2001,2005 by Larry Smith
 # Wild Open Source, Inc
 # For license terms see "COPYING"
-#
-# Takes a list of variable-value pairs and creates and
+
+##\private Takes a list of variable-value pairs and creates and
 # initializes the former with the latter in the calling
 # context.  If the first parameter is "-using" it will
 # same away the following argument and use it in a second
@@ -1355,7 +1401,7 @@ proc reshapeArrayToLong { tmp } {
 # If a -var is followed by another -var or by the end of
 # the list, the var is set to 1.
 
- proc init { args } {
+proc init { args } {
     if { [ llength $args ] == 0 } return
     if { [ llength $args ] == 1 } { eval set args $args }
     set arglist {}
@@ -1395,13 +1441,13 @@ proc reshapeArrayToLong { tmp } {
 
 
 
-# A tentative procedure to embed gnuplot plots.   Usage:
-#  set where .c
-#  canvas $where
-#  pack $where -fill both -expand true
-#  eval [gp {plot sin(x)}]
-#  gnuplot $where
-#  bind . <Configure> { gnuplot $where }
+##\private A tentative procedure to embed gnuplot plots.   Usage:
+#      set where .c
+#      canvas $where
+#      pack $where -fill both -expand true
+#      eval [gp {plot sin(x)}]
+#      gnuplot $where
+#      bind . <Configure> { gnuplot $where }
  proc gp { cli } {
     set in "set term tk
 $cli
@@ -1413,67 +1459,4 @@ exit"
     close $io
     return $msg
 }
-
-
-### = Examples =
-### 
-### == Native contacts ==
-### 
-### A (deliberately verbose) example for computing native contacts.
-### 
-### {{{
-###         ## The atom selection
-### 	set chaina [ atomselect top "chain A and name CA" ]
-### 
-###         ## Use first trajectory frame as a reference
-### 	$chaina frame 0
-### 	set ref [ prepareNativeContacts 7 $chaina ]
-### 
-###         ## Get the number of native contacts (for computing their fraction)
-### 	set nnc [ llength $ref ]
-### 	puts "There are $nnc contacts in the native state"
-### 
-###                     # Now, for each frame,
-### 	forFrames fno $chaina {
-###                     # compute number of native contacts,
-### 		set nc [measureNativeContacts $ref 7 $chaina]  
-###                     # their fraction,
-### 		set qnc [ expr 100.0 * $nc / $nnc ]
-###                     # and print both.
-### 		puts [ format "Frame %d: %f, %.3f%%" $fno $nc $qnc ]
-### 	}
-### }}}
-### 
-### == Secondary structure ==
-### 
-### Iterating over frames
-### 
-### {{{
-###     forFrames fn $kid {
-###         animate goto $fn
-###         mol ssrecalc [$kid molid]
-###         puts "$fn [vecmean [$kid get alpha_helix]]" 
-###     }
-### }}}
-### 
-### 
-### == RMSD for all files (in a directory) and frames ==
-### 
-### Variables {{{$compare}}} and {{{$reference}}} should be two atomselections in different molecules. The former should be the TOP molecule.
-### 
-### {{{ 
-### forFiles id {../filtered/*.dcd} {
-###     set outch [open $id.rmsd w]
-###     forFrames fn $compare {
-### 	set trans_mat [measure fit $compare $reference]
-### 	$compare move $trans_mat
-### 	set rmsd [measure rmsd $compare $reference]
-### 	puts $outch "$rmsd $id $fn"
-###     }
-###     close $outch
-### }
-### }}}
-### 
-### 
-### 
 
