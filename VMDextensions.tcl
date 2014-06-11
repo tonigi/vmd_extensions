@@ -14,8 +14,8 @@
 # Please refer to the table of contents for the full feature
 # list. 
 # 
-# License
-# =======
+#
+#\page license License
 #
 # Copyright (c) 2010-2014
 # Universitat Pompeu Fabra (UPF) and National Research Council of Italy (CNR). 
@@ -35,8 +35,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>. 
 #
 #
-# Examples
-# ========
+#\page examples Examples
 # 
 # Native contacts 
 # ---------------
@@ -122,8 +121,9 @@
 
 
 
-##\name Iterate a TCL block over all frames
-#@{
+##\defgroup forFrames Iterate a TCL block over all frames
+# @{
+
 ##  Iterator over frames in the current selection.  While in ''block'',
 #  the first argument is set to the (integer) current frame
 #  number. The selection is used to get the frame range, and is
@@ -163,12 +163,14 @@ proc forFramesMeasure {framenum sel block} {
     }
     return $r
 }
-#@}
+
+## @}
 
 # ----------------------------------------
 
-##\name Iterate a TCL block over a set of files
-#@{
+##\defgroup forFiles Iterate a TCL block over a set of files
+# @{
+
 ## Iterator over files matched by the given pattern. The matched files
 # are loaded in sequence, sorted in
 # [natural order](http://sourcefrog.net/projects/natsort/), and the
@@ -193,13 +195,13 @@ proc forFiles {filename pattern block} {
 }
 
 
-# Iterate over chains matched in the named pattern prefix, a la
+##\private Iterate over chains matched in the named pattern prefix, a la
 # GPUGRID.  Will discard currently-loaded frames!
 #
 #       forChains chain {../results} {
 #              puts "DCD files prefixed with $chain have [ molinfo top get numframes ] frames" 
 #       }
- proc forChains {chain dir block} {
+proc forChains {chain dir block} {
     set allfiles [glob -tails -directory $dir *.dcd ]
     foreach fn $allfiles { lappend allnames [ lindex [ split $fn - ] 0 ] }
     set chainlist [ lsort -uniq -dictionary $allnames ]
@@ -215,15 +217,17 @@ proc forFiles {filename pattern block} {
     }
     animate delete all
 }
-#@}
+
+## @}
+
 
 # ----------------------------------------
 
 
 
-##\name Compute the number of native contacts
+##\defgroup nc Compute the number of native contacts
+#  @{
 
-#@{
 ## Given the frame, compute whether each residue in query is making
 # contact (< cutoff) with target. Return list like { { R1 0 } {R2 1 }
 # ... } where R1, R2 etc belong to query
@@ -262,10 +266,10 @@ proc residueContacts {cutoff query target} {
 
 
 
-# Like measure contacts, but return resid's rather than
+## Like measure contacts, but return resid's rather than
 # indices. Return a list of (unique-ified) residue contacts as { R1 R2
 # } { R1 R3 } ...  where the first element of a pair is a resid in
-# sel1 and the second is in sel2. all computations are taken in the
+# sel1 and the second is in sel2. All computations are taken in the
 # selections' frames. 
 proc residueContactPairs { cutoff sel1 sel2 } {
     set cl [ measure contacts $cutoff $sel1 $sel2 ]
@@ -310,7 +314,7 @@ proc residueContactPairs { cutoff sel1 sel2 } {
 }
 
 
-# Return a matrix (as a serialized array) with the time for first
+## Return a matrix (as a serialized array) with the time for first
 # contact of each contact pair. Times may be missing if they never do
 # a first contact! Example:
 #       set fctm [firstContactTimeMatrix 5 $a $b]
@@ -336,7 +340,7 @@ proc firstContactTimeMatrix { cutoff sel1 sel2 } {
 
 
 
-# Prepare the "reference" list of native contacts, e.g. from the
+## Prepare the "reference" list of native contacts, e.g. from the
 # crystal structure. Return value: a list of native contact pairs
 # (only useful to be passed as an argument to measureNativeContacts,
 # or to get its length).
@@ -348,7 +352,7 @@ proc prepareNativeContacts { cutoff sel1 {sel2 0} } {
     return [ transpose [ measure contacts $cutoff $sel1 $sel2 ] ]
 }
 
-# TBD.
+## TBD.
 proc measureNativeContacts { nclist cutoff sel1 {sel2 0} } {
 	set n 0
 	if { $sel2 == 0 } { set sel2 $sel1 }
@@ -363,14 +367,14 @@ proc measureNativeContacts { nclist cutoff sel1 {sel2 0} } {
 	return $n
 }
 
-#@}
+## @}
 
 
 # ----------------------------------------
 
 
-##\name Compute distance matrices
-#@{
+##\defgroup dm Compute distance matrices
+# @{
 
 ## Given two atom selection, return the distance matrix (in
 # longitudinal form: <tt>{ { r1 r2 dist} ... }</tt> ) between residues
@@ -539,14 +543,15 @@ proc distanceProfile {lig prot {dbins "2 3 4 5 6 7 10" }} {
     return $omat
 }
 
-#@}
+## @}
 
 
 # ----------------------------------------
 
 
-##\name Quick plots
+##\defgroup qplot Quick plots
 #@{
+
 ## Quick plot function. Takes either a list of y values, or two lists,
 # with x and y values.  If two vectors are given, they are interpreted
 # as ''x'' and ''y'' values respectively.
@@ -585,13 +590,13 @@ proc qhist { bins li } {
     return [list $x0 $h]
 }
 
-#@}
+## @}
 
 
 # ----------------------------------------
 
-##\name  Load multiple files
-#@{
+##\defgroup lf Load multiple files
+# @{
 
 ## Usage:  loadFrames 53-*.coor
 # Will load all files starting with 53 (coordinates, dcd, whatever) in natural sort
@@ -645,14 +650,14 @@ proc identifyFrame {} {
     return $r
 }
 
-#@}
+## @}
 
 # ----------------------------------------
 
 
 
-##\name Renumber residues
-#@{
+##\defgroup ren Renumber residues
+# @{
 
 ## Renumbers the residues in the atom selection so that they start from
 # the given integer. Useful to re-match standard numbering. Note that
@@ -690,14 +695,14 @@ proc renumber_from_1 { sel } {
 	$sel set resid $nresid
 }
 
-#@}
+## @}
 
 # ----------------------------
 
 
 
-##\name Structural analysis and geometry
-#@{
+##\defgroup geo Structural analysis and geometry
+# @{
 
 
 ## Count the fraction of residues that have phi/psi in the canonical
@@ -844,12 +849,12 @@ proc doudouVolume {dx dy dz kx ky kz {kbt 0.59}} {
     return [expr $dx1 * $dy1 * $dz1 ]
 }
 
-#@}
+## @}
 
 # --------------------------------
 
-##\name Structural manipulation
-#@{
+##\defgroup manip Structural manipulation
+# @{
 
 # Mutate first and last residue of a selection so that tleap will turn them
 # into ACE and NME caps. "cap" may be "ACE", "NME", or "both" (default). 
@@ -908,12 +913,13 @@ proc swap { s1 s2 } {
     $s2 move [ measure inverse $mm ]
 }
 
-#@}
+## @}
 
 
 # -----------------------------------------
 
-##\name Root-mean square calculations 
+##\defgroup rms Root-mean square calculations 
+# @{
 
 ## Compute rmsd of all frames of sel wrt currently selected frame in
 # ref. Per each frame, align ref1 to ref2, and measure RMSD of sel1
@@ -993,12 +999,13 @@ proc rmsfTrajectoryColor {sel {win 10}} {
     }
 }
 
-#@}
+## @}
 
 # ----------------------------
 
 
-##\name Format conversions
+##\defgroup format Format conversions
+# @{
 
 ## Write a crude PQR file using radiuses and masses in the topology
 # (radii may not be appropriate for APBS calculations! use pdb2pqr
@@ -1167,12 +1174,12 @@ proc getFasta {osel} {
 	return $seq
 }
 
-#@}
+## @}
 
 
 
-##\name Save VMD representations
-#@{
+##\defgroup save Save VMD representations
+# @{
 ## Create a list of "mol" commands that reproduce the current top
 # molecule display.
 proc dumpRepresentations {} {
@@ -1189,14 +1196,14 @@ proc dumpRepresentations {} {
     }
     puts "  animate goto [molinfo top get frame]"
 }
-#@}
+## @}
 
 
 
 
-#@{
 
-#\name Processing large trajectories in-memory
+#\defgroup large Processing large trajectories in-memory
+# @{
 
 ##\private Process in-memory a large trajectory that came from several different files.
 # Something like
@@ -1239,13 +1246,13 @@ proc dumpRepresentations {} {
 	}
     }
 }
-#@}
+## @}
 
 # ----------------------------------------
 
 
-##\name Matrix and list manipulation
-#@{
+##\defgroup list Matrix and list manipulation
+# @{
 
 ## Transpose a 2D table (list of lists). From [[http://wiki.tcl.tk/2748]]
 proc transpose {matrix} {
@@ -1379,7 +1386,7 @@ proc reshapeArrayToLong { tmp } {
 
 
 
-#@}
+## @}
 
 
 
