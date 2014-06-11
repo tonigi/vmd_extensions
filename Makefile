@@ -2,10 +2,8 @@ doc:
 	doxygen
 
 publish: doc
-	cd html
-	git add -A
-	git commit -m "Automatic publishing"
-	git push
+	cd html; \
+	git add -A; git commit -m "Automatic publishing"; git push
 
 clean:
 	rm -rf html/*

@@ -11,8 +11,10 @@
 #  * Compute root-mean-square alignments and related measures
 #  * ...and more
 # 
-# Please refer to the table of contents for the full feature
-# list. 
+# Please refer to the <a href="modules.html">table of contents</a> for
+# the full feature list.
+#
+
 
 ##\page download Get the code
 #
