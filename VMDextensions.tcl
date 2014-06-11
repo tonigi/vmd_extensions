@@ -1,27 +1,33 @@
-##\mainpage VMD extension functions
+##\mainpage  VMD extension functions
 #
-#\author Toni Giorgino
-#\date 2010-2014
-#\copyright GNU General Public License
-# 
-# This is a collection of TCL-VMD functions that support extraction
-# of structural data from large-scale simulations. These functions
-# are currently meant for TCL-VMD programmers.  Features easy
-# semantics to
+# A collection of TCL-VMD functions that support a number of
+# structural transformations and shortcuts for TCL-VMD programmers.
+# Features easy-to-remember semantics to
 #
 #  * Iterate a block of code over frames
 #  * Iterate a block of code over trajectory files
 #  * Compute the number and fraction of native contacts
 #  * Compute distance matrices
+#  * Compute root-mean-square alignments and related measures
 #  * ...and more
 # 
 # Please refer to the table of contents for the full feature
 # list. 
 
+##\page download Get the code
+#
+# Download the latest release from
+# https://github.com/tonigi/vmd_extensions/releases/latest . 
+#
+# Right now there is no installation procedure - just issue
+#
+# \code source VMDextensions.tcl
+# \endcode
+
 ##\page license License
 #
-# Copyright (c) 2010-2014 CNR and UPF
-# Author:  toni.giorgino  isib cnr it.
+#\copyright 2010-2014 CNR and UPF
+#\author  toni.giorgino  isib cnr it.
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -829,7 +835,7 @@ proc minDist {s1 s2} {
     return $md
 }
 
-#\private TBD
+##\private TBD
 proc doudouVolume {dx dy dz kx ky kz {kbt 0.59}} {
     set pi 3.14159265358979
     set dx1  [expr $dx + sqrt(2*$pi*$kbt/$kx) ]
@@ -845,7 +851,7 @@ proc doudouVolume {dx dy dz kx ky kz {kbt 0.59}} {
 ##\defgroup manip Structural manipulation
 # @{
 
-# Mutate first and last residue of a selection so that tleap will turn them
+## Mutate first and last residue of a selection so that tleap will turn them
 # into ACE and NME caps. "cap" may be "ACE", "NME", or "both" (default). 
 proc addCaps { sel {cap both} } {
 	set rl [lsort -integer -unique [$sel get residue]]
@@ -870,7 +876,7 @@ proc addCaps { sel {cap both} } {
 }
 
 
-## Stronger version of addcaps - replaces whatever first and last atoms
+## Stronger version of \ref addCaps - replaces whatever first and last atoms
 proc addCaps2 {sel {cap both}} {
 	set sl [lsort -integer -unique [$sel get index]]
 	set mid [$sel molid]
@@ -1484,7 +1490,7 @@ proc dumpRepresentations {} {
 # ----------------------------------------
 
 
-##\defgroup list Matrix and list manipulation
+##\defgroup list List and matrix operations
 # @{
 # Miscellaneous TCL data-structure related operations.
 
