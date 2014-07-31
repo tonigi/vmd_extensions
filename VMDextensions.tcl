@@ -1196,6 +1196,42 @@ proc getFasta {osel} {
 ## @}
 
 
+
+
+# ---------------------------------
+
+
+##\defgroup graphics Miscellaneous graphics operations
+# @{
+#
+# \ref labelAtoms shows labels with a chosen format on all atoms 
+# matched by the given selection (string or atomselection object, default: "all").
+# Existing labels are deleted. 
+# For example: \code 
+#   labelAtoms {%t} {element C}
+# \endcode
+proc labelAtoms {txt {sel all}} {
+	if [ regexp {^atomselect} $sel ] {
+		set as $sel
+	} else {
+		set as [atomselect top $sel]
+	}
+
+	label delete Atoms
+	set i 0
+	foreach a [$as list] {
+		set tmp [format "%d/%d" [$as molid] $a]
+		label add Atoms $tmp
+		label textformat Atoms $i $txt
+		incr i
+	}
+	if [ ! regexp {^atomselect} $sel ] { $as delete }
+}
+
+
+## @}
+
+
 # ---------------------------------
 
 
