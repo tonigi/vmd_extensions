@@ -9,7 +9,8 @@
 #  * Compute the number and fraction of native contacts
 #  * Compute distance matrices
 #  * Compute root-mean-square alignments and related measures
-#  * ...and more
+#  * Use the topology stored in a GROMACS' TPR format
+#  * ...and many more
 # 
 # Please refer to the <a href="modules.html">table of contents</a> for
 # the full feature list.
@@ -25,10 +26,11 @@
 #
 # \code source VMDextensions.tcl
 # \endcode
+#
+# Alternatively, locate the \c scripts folder under your VMD installation directory and create a directory named \c init.d (if not already there). Copy \c VMDextensions.tcl it in the newly-created directory.
 
 ##\page license License
 #
-#\copyright 2010-2014 CNR and UPF
 #\author  toni.giorgino  isib cnr it.
 #
 # This program is free software: you can redistribute it and/or modify
