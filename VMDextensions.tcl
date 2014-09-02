@@ -20,7 +20,7 @@
 ##\page download Get the code
 #
 # Download the latest release from
-# https://github.com/tonigi/vmd_extensions/releases/latest . 
+# https://github.com/tonigi/vmd_extensions/blob/master/VMDextensions.tcl . 
 #
 # Right now there is no installation procedure - just issue
 #
