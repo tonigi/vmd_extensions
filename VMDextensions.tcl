@@ -1026,6 +1026,28 @@ proc rmsfTrajectoryColor {sel {win 10}} {
 ##\defgroup format Format conversions
 # @{
 
+
+## Read bonds connectivities stored in a GROMACS's .tpr file and apply it to the current molecule. Unfortunately solvent bonds do not seem to show up (e.g tip3).
+# The current connectivity is discarded. Requires "gmxdump" (of a sufficiently new version for your topology). 
+# Tested with gromacs-5.0. Not that different wrt. http://md.chem.rug.nl/cgmartini/index.php/rb
+proc setBondsFromTpr fn {
+	set ch [open "|gmx -quiet dump  -s $fn" r ]
+	set bl {}
+	while { [gets $ch line] != -1 } {
+		if [ regexp {\(BONDS\) (\d+) (\d+)} $line junk b1 b2 ] {
+			lappend bl [list $b1 $b2]
+		}
+		if [ regexp {\(CONSTR\) (\d+) (\d+)} $line junk b1 b2 ] {
+			lappend bl [list $b1 $b2]
+		}
+	}
+	catch { close $ch } ; #???
+	if { [llength $bl] > 0 } {
+		topo clearbonds
+		topo setbondlist $bl
+	}
+}
+
 ## Write a crude PQR file using radiuses and masses in the topology
 # (radii may not be appropriate for APBS calculations! use pdb2pqr
 # instead!)  Note that this preserves the CHAIN id. VMD PQR loader
@@ -1209,6 +1231,7 @@ proc getFasta {osel} {
 # Existing labels are deleted. 
 # For example: \code 
 #   labelAtoms {%t} {element C}
+#   # label textoffset Atoms 0 { 0.115385 -0.159341 } 
 # \endcode
 proc labelAtoms {txt {sel all}} {
 	if [ regexp {^atomselect} $sel ] {
@@ -1225,7 +1248,7 @@ proc labelAtoms {txt {sel all}} {
 		label textformat Atoms $i $txt
 		incr i
 	}
-	if [ ! regexp {^atomselect} $sel ] { $as delete }
+        if { ! [regexp {^atomselect} $sel ] } { $as delete }
 }
 
 
