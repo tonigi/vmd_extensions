@@ -606,8 +606,8 @@ proc loadFrames {pattern} {
 
 
 ## Usage: loadFrames 53-*.coor Will load all files starting with 53
-# (coordinates, dcd, whatever) in natural sort e.g. 44-bla-2-100.coor
-# < 44-bla11-100.coor Error handling is tricky. The
+# (coordinates, dcd, whatever) in natural sort, e.g. `44-bla-2-100.coor`
+# < `44-bla11-100.coor`. Error handling is tricky. The
 # /tmp/appendFrames.[pid].log will be true in any case. The ... .ff
 # file will contain infos on the last successfully loaded frame for
 # each trajectory. Frames are 0-based.
@@ -901,9 +901,16 @@ proc addCaps2 {sel {cap both}} {
 	puts "Structure mutated, now save PDB"
 }
 
+## Move a selection so that its center of mass is placed at the given point.
+# \param s1 The atomselection
+# \param dest Destination point, as in `{x y z}`
+proc moveSelTo { s1 dest } {
+    set c [measure center $s1]
+    $s1 moveby [vecsub $dest $c]
+}
 
-
-## Exchange the positions of two atomselections (based on their centers)
+## Exchange the positions of two atomselections *s1* and *s2* (based
+# on their centers).
 proc swap { s1 s2 } {
     set mm [ trans center [ measure center $s1 ] offset [ measure center $s2 ] ]
     $s1 move $mm
