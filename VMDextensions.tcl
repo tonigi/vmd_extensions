@@ -947,13 +947,15 @@ proc swap { s1 s2 } {
 # \endcode
 
 
-## Compute rmsd of all frames of sel wrt currently selected frame in
-# ref. Per each frame, align ref1 to ref2, and measure RMSD of sel1
-# wrt sel2. sel1 and ref1 should belong to the same molecule (the
-# trajectory under study, multiple frames).  Sel2 and ref2 should
-# belong to the same molecule (the reference frame). Return a list of
-# RMSD values (one per frame in sel). If sel2 is the string ROTATE,
-# rmsd is not computed, but sel1 is rotated instead.
+## Compute RMSD, over all frames, of a selection of atoms *sel1* with
+# respect to another *sel2* after aligning the set of atoms *ref1* to
+# *ref2*. In ther words, for per each frame, align *ref1* to *ref2*,
+# and measure RMSD of *sel1* with respect to *sel2*. *sel1* and *ref1*
+# should belong to the same molecule (the trajectory under study,
+# multiple frames).  *Sel2* and *ref2* should belong to the same
+# molecule (the reference frame). Return a list of RMSD values (one
+# per frame in *sel*). If *sel2* is the string `ROTATE`, RMSD is not
+# computed, but *sel1* is rotated instead.
 proc rmsdOf { sel1 sel2 ref1 ref2 } {
     set rmsdlist {}
     forFrames fn $sel1 {
@@ -970,7 +972,10 @@ proc rmsdOf { sel1 sel2 ref1 ref2 } {
 }
 
 ## Compute average rmsf by sliding windows of width win. RMSF will be
-# averaged by weight.
+# averaged by weight. See details in \ref rmsfTrajectoryColor.
+# \param sel  atom selection
+# \param win  window size (frames) 
+# \param step stride 
 proc rmsfTrajectory {sel {win 10} {step 1}} {
     set n [ molinfo [$sel molid] get numframes ]
     set m [ $sel get mass ]
@@ -999,7 +1004,10 @@ proc rmsfTrajectory {sel {win 10} {step 1}} {
 
 
 ## Compute average rmsf by sliding windows of width win. RMSF will be
-# averaged by weight. Assign it to the "user" attribute at each frame.
+# averaged by weight. Assign it to the "user" attribute at each frame, 
+# which will hold the RMSF computed over the next *win* frames.
+# \param sel  atom selection
+# \param win  window size (frames)
 proc rmsfTrajectoryColor {sel {win 10}} {
     set n [ molinfo [$sel molid] get numframes ]
 
