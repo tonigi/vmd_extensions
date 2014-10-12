@@ -1686,6 +1686,66 @@ proc reshapeArrayToLong { tmp } {
 
 # UTILITY --------------------------------------------------
 
+##\defgroup asel_group Auto-cleanup atomselections
+# @{
+# The \ref asel and \ref asel_free functions provide a replacement for
+# VMD's `atomselect` which behave like VMD's usual atomselect, but
+# keeps a list of selections created in the scope of the calling
+# function (it is called `_asel_list`, but you should not need
+# it). Such atomselections can be deleted all at once when the
+# function is exited via the \ref asel_free function. 
+#
+# **Note** these functions are experimental and unnecessary for most
+# people, because the behavior of recent VMD versions is to clean up
+# atomselections created in a `proc` anyway (unless they are declared
+# `global`).
+#
+# In short, just use \ref asel instead of `atomselect`, and call \ref
+# asel_free at the end of your function.
+# 
+# The \ref ssel function allows one to write function which accept
+# either selection strings or existing atomselections.
+
+
+## Auto-cleanup version of `atomselect`. 
+proc asel {args} {
+    upvar _asel_list l
+    set s [eval "atomselect $args"]
+    $s uplevel
+    lappend l $s
+    return $s
+}
+
+## Auto-cleanup version of `atomselect`. If `str` is an atomselection,
+# just return it as it is. Otherwise, make a selection of it with the
+# top molecule, record it like \ref asel, and return it.
+# \param str An atom selection string or an existing atomselection
+proc ssel {str} {
+    if [string is integer [$str num]] {
+	return $str
+    } else {
+	upvar _asel_list l
+	set s [atomselect $m $str]
+	$s uplevel
+	lappend l $s
+	return $s
+    }
+}
+
+
+## Cleanup the atom-selections performed by \ref asel and \ref ssel in the 
+# current function. 
+proc asel_free {} {
+    upvar _asel_list l
+    foreach s $l {
+	$s delete
+    }
+    set l {}
+}
+
+
+## @}
+
 # http://wiki.tcl.tk/10876
 # init.tcl
 # Copyright 2001,2005 by Larry Smith
