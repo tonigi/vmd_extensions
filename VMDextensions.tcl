@@ -1695,7 +1695,7 @@ proc reshapeArrayToLong { tmp } {
 # it). Such atomselections can be deleted all at once when the
 # function is exited via the \ref asel_free function. 
 #
-# **Note** these functions are experimental and unnecessary for most
+# \warning these functions are experimental and unnecessary for most
 # people, because the behavior of recent VMD versions is to clean up
 # atomselections created in a `proc` anyway (unless they are declared
 # `global`).
@@ -1711,7 +1711,7 @@ proc reshapeArrayToLong { tmp } {
 proc asel {args} {
     upvar _asel_list l
     set s [eval "atomselect $args"]
-    $s uplevel
+    $s global ;# uplevel
     lappend l $s
     return $s
 }
@@ -1726,7 +1726,7 @@ proc ssel {str} {
     } else {
 	upvar _asel_list l
 	set s [atomselect $m $str]
-	$s uplevel
+	$s global ;# uplevel
 	lappend l $s
 	return $s
     }
@@ -1738,6 +1738,7 @@ proc ssel {str} {
 proc asel_free {} {
     upvar _asel_list l
     foreach s $l {
+	puts "deleting $s"
 	$s delete
     }
     set l {}
