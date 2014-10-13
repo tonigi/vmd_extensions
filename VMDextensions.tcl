@@ -608,8 +608,8 @@ proc loadFrames {pattern} {
 
 
 ## Usage: loadFrames 53-*.coor Will load all files starting with 53
-# (coordinates, dcd, whatever) in natural sort e.g. 44-bla-2-100.coor
-# < 44-bla11-100.coor Error handling is tricky. The
+# (coordinates, dcd, whatever) in natural sort, e.g. `44-bla-2-100.coor`
+# < `44-bla11-100.coor`. Error handling is tricky. The
 # /tmp/appendFrames.[pid].log will be true in any case. The ... .ff
 # file will contain infos on the last successfully loaded frame for
 # each trajectory. Frames are 0-based.
@@ -903,9 +903,16 @@ proc addCaps2 {sel {cap both}} {
 	puts "Structure mutated, now save PDB"
 }
 
+## Move a selection so that its center of mass is placed at the given point.
+# \param s1 The atomselection
+# \param dest Destination point, as in `{x y z}`
+proc moveSelTo { s1 dest } {
+    set c [measure center $s1]
+    $s1 moveby [vecsub $dest $c]
+}
 
-
-## Exchange the positions of two atomselections (based on their centers)
+## Exchange the positions of two atomselections *s1* and *s2* (based
+# on their centers).
 proc swap { s1 s2 } {
     set mm [ trans center [ measure center $s1 ] offset [ measure center $s2 ] ]
     $s1 move $mm
@@ -942,13 +949,15 @@ proc swap { s1 s2 } {
 # \endcode
 
 
-## Compute rmsd of all frames of sel wrt currently selected frame in
-# ref. Per each frame, align ref1 to ref2, and measure RMSD of sel1
-# wrt sel2. sel1 and ref1 should belong to the same molecule (the
-# trajectory under study, multiple frames).  Sel2 and ref2 should
-# belong to the same molecule (the reference frame). Return a list of
-# RMSD values (one per frame in sel). If sel2 is the string ROTATE,
-# rmsd is not computed, but sel1 is rotated instead.
+## Compute RMSD, over all frames, of a selection of atoms *sel1* with
+# respect to another *sel2* after aligning the set of atoms *ref1* to
+# *ref2*. In ther words, for per each frame, align *ref1* to *ref2*,
+# and measure RMSD of *sel1* with respect to *sel2*. *sel1* and *ref1*
+# should belong to the same molecule (the trajectory under study,
+# multiple frames).  *Sel2* and *ref2* should belong to the same
+# molecule (the reference frame). Return a list of RMSD values (one
+# per frame in *sel*). If *sel2* is the string `ROTATE`, RMSD is not
+# computed, but *sel1* is rotated instead.
 proc rmsdOf { sel1 sel2 ref1 ref2 } {
     set rmsdlist {}
     forFrames fn $sel1 {
@@ -965,7 +974,10 @@ proc rmsdOf { sel1 sel2 ref1 ref2 } {
 }
 
 ## Compute average rmsf by sliding windows of width win. RMSF will be
-# averaged by weight.
+# averaged by weight. See details in \ref rmsfTrajectoryColor.
+# \param sel  atom selection
+# \param win  window size (frames) 
+# \param step stride 
 proc rmsfTrajectory {sel {win 10} {step 1}} {
     set n [ molinfo [$sel molid] get numframes ]
     set m [ $sel get mass ]
@@ -994,7 +1006,10 @@ proc rmsfTrajectory {sel {win 10} {step 1}} {
 
 
 ## Compute average rmsf by sliding windows of width win. RMSF will be
-# averaged by weight. Assign it to the "user" attribute at each frame.
+# averaged by weight. Assign it to the "user" attribute at each frame, 
+# which will hold the RMSF computed over the next *win* frames.
+# \param sel  atom selection
+# \param win  window size (frames)
 proc rmsfTrajectoryColor {sel {win 10}} {
     set n [ molinfo [$sel molid] get numframes ]
 
@@ -1695,6 +1710,67 @@ proc reshapeArrayToLong { tmp } {
 
 
 # UTILITY --------------------------------------------------
+
+##\defgroup asel_group Auto-cleanup atomselections
+# @{
+# The \ref asel and \ref asel_free functions provide a replacement for
+# VMD's `atomselect` which behave like VMD's usual atomselect, but
+# keeps a list of selections created in the scope of the calling
+# function (it is called `_asel_list`, but you should not need
+# it). Such atomselections can be deleted all at once when the
+# function is exited via the \ref asel_free function. 
+#
+# \warning these functions are experimental and unnecessary for most
+# people, because the behavior of recent VMD versions is to clean up
+# atomselections created in a `proc` anyway (unless they are declared
+# `global`).
+#
+# In short, just use \ref asel instead of `atomselect`, and call \ref
+# asel_free at the end of your function.
+# 
+# The \ref ssel function allows one to write function which accept
+# either selection strings or existing atomselections.
+
+
+## Auto-cleanup version of `atomselect`. 
+proc asel {args} {
+    upvar _asel_list l
+    set s [eval "atomselect $args"]
+    $s global ;# uplevel
+    lappend l $s
+    return $s
+}
+
+## Auto-cleanup version of `atomselect`. If `str` is an atomselection,
+# just return it as it is. Otherwise, make a selection of it with the
+# top molecule, record it like \ref asel, and return it.
+# \param str An atom selection string or an existing atomselection
+proc ssel {str} {
+    if [string is integer [$str num]] {
+	return $str
+    } else {
+	upvar _asel_list l
+	set s [atomselect $m $str]
+	$s global ;# uplevel
+	lappend l $s
+	return $s
+    }
+}
+
+
+## Cleanup the atom-selections performed by \ref asel and \ref ssel in the 
+# current function. 
+proc asel_free {} {
+    upvar _asel_list l
+    foreach s $l {
+	puts "deleting $s"
+	$s delete
+    }
+    set l {}
+}
+
+
+## @}
 
 # http://wiki.tcl.tk/10876
 # init.tcl
