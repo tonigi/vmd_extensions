@@ -3,7 +3,7 @@ doc:
 
 publish: doc
 	cd html; \
-	git add -A; git commit -m "Automatic publishing"; git push
+	git add -A; git commit -m "Automatic publishing"; git push --force
 
 clean:
 	rm -rf html/*

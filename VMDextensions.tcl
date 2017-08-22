@@ -1043,6 +1043,28 @@ proc rmsfTrajectoryColor {sel {win 10}} {
 ##\defgroup format Format conversions
 # @{
 
+## Load the optional data columns of a XYZ file in the "user"
+# properties. Coordinates are ignored. Topology must be correct.
+proc readXYZUser fn {
+    set f [open $fn r]
+    set fr 0
+    while {[gets $f n]>=0} {
+	gets $f junk
+	for {set i 0} {$i<$n} {incr i} {
+	    gets $f xyz;	# E  X Y Z  U1 U2 ...
+	    set as [atomselect top "serial $i"]
+	    $as frame $fr
+	    set xyz [lreplace $xyz 0 3]; # U1 U2...
+	    foreach field {user user2 user3 user4} value $xyz {
+		if {$value eq {}} { break }
+		$as set $field $value
+	    }
+	    $as delete
+	}
+	incr fr
+    }
+    close $f
+}
 
 ## Read bonds connectivities stored in a GROMACS's .tpr file and apply it to the current molecule. Unfortunately solvent bonds do not seem to show up (e.g tip3).
 # The current connectivity is discarded. Requires "gmxdump" (of a sufficiently new version for your topology). 
@@ -1181,6 +1203,8 @@ proc writeNullVelFile {as fname} {
     animate write namdbin $fname sel $as
     $as set {x y z} $oxyz
 }
+
+
 
 # proc writeZeroVelFile {n filename} {
 # 	set fp [open $filename w]
