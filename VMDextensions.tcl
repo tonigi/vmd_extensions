@@ -1052,7 +1052,7 @@ proc readXYZUser fn {
 	gets $f junk
 	for {set i 0} {$i<$n} {incr i} {
 	    gets $f xyz;	# E  X Y Z  U1 U2 ...
-	    set as [atomselect top "serial $i"]
+	    set as [atomselect top "index $i"]
 	    $as frame $fr
 	    set xyz [lreplace $xyz 0 3]; # U1 U2...
 	    foreach field {user user2 user3 user4} value $xyz {
