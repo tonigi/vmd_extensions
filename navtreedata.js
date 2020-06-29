@@ -2,6 +2,7 @@ var NAVTREE =
 [
   [ "VMD Extension Functions", "index.html", [
     [ "Get the code", "download.html", null ],
+    [ "Citation", "citation.html", null ],
     [ "License", "license.html", null ],
     [ "Modules", "modules.html", "modules" ],
     [ "Files", null, [
