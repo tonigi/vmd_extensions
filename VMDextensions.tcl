@@ -15,23 +15,65 @@
 # Please refer to the <a href="modules.html">table of contents</a> for
 # the full feature list.
 #
+# If you like this software, please cite it according to the \ref citation page.
+
+
+
+
+
 
 
 ##\page download Get the code
 #
 # Download the latest release from
-# https://github.com/tonigi/vmd_extensions/blob/master/VMDextensions.tcl . 
+# https://github.com/tonigi/vmd_extensions
 #
-# Right now there is no installation procedure - just issue
+# There is no installation procedure - just issue
 #
 # \code source VMDextensions.tcl
 # \endcode
 #
 # Alternatively, locate the \c scripts folder under your VMD installation directory and create a directory named \c init.d (if not already there). Copy \c VMDextensions.tcl it in the newly-created directory.
 
+
+##\page citation Citation
+#
+# If you like this software, please cite:
+#
+# > Giorgino T. Analysis Libraries for Molecular Trajectories: A
+# > Cross-Language Synopsis. In: Bonomi M, Camilloni C, 
+# > editors. Biomolecular Simulations: Methods and Protocols. 
+# > New York, NY: Springer; 2019. p. 503–27. (Methods in Molecular Biology). Available from: 
+# > [doi:10.1007/978-1-4939-9608-7_20](https://doi.org/10.1007/978-1-4939-9608-7_20) . 
+# > Preprint [available here](https://github.com/giorginolab/analysis_libraries_chapter).
+#
+#
+# E.g., if using Bibtex,
+#
+# \code
+# @incollection{giorgino_analysis_2019,
+#	address = {New York, NY},
+#	series = {Methods in {Molecular} {Biology}},
+#	title = {Analysis {Libraries} for {Molecular} {Trajectories}: {A} {Cross}-{Language} {Synopsis}},
+#	isbn = {978-1-4939-9608-7},
+#	shorttitle = {Analysis {Libraries} for {Molecular} {Trajectories}},
+#	url = {https://doi.org/10.1007/978-1-4939-9608-7_20},
+#	booktitle = {Biomolecular {Simulations}: {Methods} and {Protocols}},
+#	publisher = {Springer},
+#	author = {Giorgino, Toni},
+#	editor = {Bonomi, Massimiliano and Camilloni, Carlo},
+#	year = {2019},
+#	doi = {10.1007/978-1-4939-9608-7_20},
+#	keywords = {Bio3D, HTMD, MDAnalysis, MDTraj, Molecular dynamics, Scripting languages, Trajectory analysis, VMD},
+#	pages = {503--527}
+# }
+# \endcode
+
+
+
 ##\page license License
 #
-#\author  toni.giorgino  isib cnr it.
+#\author  toni.giorgino  gmail com.
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by

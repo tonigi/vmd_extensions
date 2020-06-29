@@ -1,6 +1,8 @@
 doc:
 	doxygen
 
+# Needs doxygen 1.8.13. TCL support was removed.
+
 publish: doc
 	cd html; \
 	git add -A; git commit -m "Automatic publishing"; git push --force
