@@ -967,33 +967,6 @@ proc swap { s1 s2 } {
 
 # -----------------------------------------
 
-##\defgroup traj Trajectory manipulation
-# @{
-
-
-## Swap the coordinates of two frames *frame1* and *frame2* for all atoms in
-# the trajectory of molecule *molID*. In other words, for the loaded molecule
-# (with ID *molID*), exchange the atomic coordinates stored at frame *frame1*
-# with those at frame *frame2* entirely in memory. *molID* should refer to a
-# molecule loaded in VMD (e.g. returned by `mol new`), and *frame1* and
-# *frame2* are zero‑based frame indices. 
-proc swapFrames {molID frame1 frame2} {
-    set sel [atomselect $molID "all"]
-    $sel frame $frame1
-    set c1 [$sel get {x y z}]
-    $sel frame $frame2
-    set c2 [$sel get {x y z}]
-    $sel frame $frame1; $sel set {x y z} $c2
-    $sel frame $frame2; $sel set {x y z} $c1
-    animate update style
-    $sel delete
-}
-
-
-## @}
-
-# -----------------------------------------
-
 ##\defgroup rms Root-mean square calculations 
 # @{
 #
@@ -1025,8 +998,8 @@ proc swapFrames {molID frame1 frame2} {
 # and measure RMSD of *sel1* with respect to *sel2*. *sel1* and *ref1*
 # should belong to the same molecule (the trajectory under study,
 # multiple frames).  *Sel2* and *ref2* should belong to the same
-# molecule (the reference frame). Return a list of RMSD values (one
-# per frame in *sel*). If *sel2* is the string `ROTATE`, RMSD is not
+# molecule (the reference frame, only one frame). Return a list of RMSD values (one
+# per frame in *sel1*). If *sel2* is the string `ROTATE`, RMSD is not
 # computed, but *sel1* is rotated instead.
 proc rmsdOf { sel1 sel2 ref1 ref2 } {
     set rmsdlist {}
@@ -1042,6 +1015,21 @@ proc rmsdOf { sel1 sel2 ref1 ref2 } {
     }
     return $rmsdlist
 }
+
+
+## Compute RMSD over all frames of a selection *sel* with respect to
+# the first frame of the same selection.  Shortcut for
+# \code
+#   rmsdOf [atomselect top $sel] [atomselect top $sel frame 0] [atomselect top $sel] [atomselect top $sel frame 0]
+# \endcode
+proc qRMSD { { sel all} } {
+    set r [ rmsdOf [atomselect top $sel] \
+                   [atomselect top $sel frame 0] \
+                   [atomselect top $sel] \
+                   [atomselect top $sel frame 0] ]
+    return $r
+}
+
 
 ## Compute average rmsf by sliding windows of width win. RMSF will be
 # averaged by weight. See details in \ref rmsfTrajectoryColor.
@@ -1106,6 +1094,58 @@ proc rmsfTrajectoryColor {sel {win 10}} {
 }
 
 ## @}
+
+
+
+# -----------------------------------------
+
+##\defgroup traj Frame order manipulation
+# @{
+#
+# Example
+# -------
+#
+# Reorder frames by increasing RMSD to frame 0.
+#
+# \code
+#     sortFrames top [qRMSD]
+# \endcode
+
+## Swap the coordinates of two frames *frame1* and *frame2* for all atoms in
+# the trajectory of molecule *molID*. In other words, for the loaded molecule
+# (with ID *molID*), exchange the atomic coordinates stored at frame *frame1*
+# with those at frame *frame2* entirely in memory. *molID* should refer to a
+# molecule loaded in VMD (e.g. returned by `mol new`), and *frame1* and
+# *frame2* are zero‑based frame indices. 
+proc swapFrames {molID frame1 frame2} {
+    set sel [atomselect $molID "all"]
+    $sel frame $frame1
+    set c1 [$sel get {x y z}]
+    $sel frame $frame2
+    set c2 [$sel get {x y z}]
+    $sel frame $frame1; $sel set {x y z} $c2
+    $sel frame $frame2; $sel set {x y z} $c1
+    animate update style
+    $sel delete
+}
+
+## Reorder all frames of molecule *molID* according to the numeric list *values*,
+# where *values* is a list of real numbers whose length must equal the number of
+# frames in the trajectory of *molID*. Frames will be permuted so that their
+# new order corresponds to sorting *values* in ascending order. Internally,
+# builds an indexList via `lsort` and calls `animate reorder`.
+proc sortFrames {molID values} {
+    set molID [molinfo top]
+    set nFrames [molinfo $molID get numframes]
+    set idxl [lsort -real -indices $values]
+    foreach i $idxl {
+        animate dup frame $i $molID
+    }
+    animate delete beg 0 end [expr {$nFrames-1}] $molID
+}
+
+## @}
+
 
 # ----------------------------
 
