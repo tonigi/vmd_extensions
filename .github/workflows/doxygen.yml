@@ -12,6 +12,6 @@ jobs:
       with:
         auto-update-conda: true
     - name: Install Doxygen
-      run: conda install -c conda-forge --yes doxygen=1.8.17
+      run: conda install -c conda-forge --yes doxygen=1.8.16
     - name: Run Doxygen
       run: doxygen Doxyfile
