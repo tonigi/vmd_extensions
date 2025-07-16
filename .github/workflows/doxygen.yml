@@ -17,6 +17,10 @@ jobs:
     - name: Install Doxygen
       run: conda install -n doxygen -c conda-forge --yes doxygen=1.8.16
     - name: Run Doxygen
-      run: make doc
+      run: |
+        conda info
+        find $CONDA_PREFIX -name doxygen
+        echo $PATH
+        make doc
 
     
