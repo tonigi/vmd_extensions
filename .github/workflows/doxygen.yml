@@ -15,7 +15,7 @@ jobs:
         conda-remove-defaults: "true"
         miniforge-version: latest
     - name: Install Doxygen
-      run: conda install -n doxygen -c conda-forge --yes doxygen=1.8.16
+      run: conda install -n doxygen -c conda-forge --yes doxygen=1.8.14
     - name: Run Doxygen
       shell: bash -el {0}
       run: |
