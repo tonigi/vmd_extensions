@@ -73,7 +73,7 @@
 
 ##\page license License
 #
-#\author  toni.giorgino  gmail com.
+#\author  toni.giorgino  cnr it
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -963,6 +963,34 @@ proc swap { s1 s2 } {
 
 ## @}
 
+
+
+# -----------------------------------------
+
+##\defgroup traj Trajectory manipulation
+# @{
+
+
+## Swap the coordinates of two frames *frame1* and *frame2* for all atoms in
+# the trajectory of molecule *molID*. In other words, for the loaded molecule
+# (with ID *molID*), exchange the atomic coordinates stored at frame *frame1*
+# with those at frame *frame2* entirely in memory. *molID* should refer to a
+# molecule loaded in VMD (e.g. returned by `mol new`), and *frame1* and
+# *frame2* are zero‑based frame indices. 
+proc swapFrames {molID frame1 frame2} {
+    set sel [atomselect $molID "all"]
+    $sel frame $frame1
+    set c1 [$sel get {x y z}]
+    $sel frame $frame2
+    set c2 [$sel get {x y z}]
+    $sel frame $frame1; $sel set {x y z} $c2
+    $sel frame $frame2; $sel set {x y z} $c1
+    animate update style
+    $sel delete
+}
+
+
+## @}
 
 # -----------------------------------------
 
