@@ -7,9 +7,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v2
+    - name: Setup Conda
+      uses: conda-incubator/setup-miniconda@v2
+      with:
+        auto-update-conda: true
     - name: Install Doxygen
-      run: |
-        sudo apt-get update
-        sudo apt-get install -y doxygen=1.8.17-0ubuntu1
+      run: conda install -c conda-forge --yes doxygen=1.8.17
     - name: Run Doxygen
       run: doxygen Doxyfile
