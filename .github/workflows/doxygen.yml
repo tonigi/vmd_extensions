@@ -19,10 +19,6 @@ jobs:
     - name: Run Doxygen
       shell: bash -el {0}
       run: |
-        conda activate doxygen
-        conda info
-        find $CONDA_PREFIX -name doxygen
-        echo $PATH
         make doc
 
     
