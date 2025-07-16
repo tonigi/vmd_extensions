@@ -6,12 +6,17 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v4
     - name: Setup Conda
-      uses: conda-incubator/setup-miniconda@v2
+      uses: conda-incubator/setup-miniconda@v3
       with:
-        auto-update-conda: true
+        activate-environment: doxygen
+        channels: conda-forge
+        conda-remove-defaults: "true"
+        miniforge-version: latest
     - name: Install Doxygen
       run: conda install -c conda-forge --yes doxygen=1.8.16
     - name: Run Doxygen
-      run: doxygen Doxyfile
+      run: make doc
+
+    
