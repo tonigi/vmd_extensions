@@ -17,6 +17,7 @@ jobs:
     - name: Install Doxygen
       run: conda install -n doxygen -c conda-forge --yes doxygen=1.8.16
     - name: Run Doxygen
+      shell: bash -el {0}
       run: |
         conda activate doxygen
         conda info
