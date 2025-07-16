@@ -1,0 +1,15 @@
+name: /home/toni/compile/vmd_extensions/venv
+channels:
+  - conda-forge
+dependencies:
+  - _libgcc_mutex=0.1=conda_forge
+  - _openmp_mutex=4.5=2_gnu
+  - doxygen=1.8.14=hd1b7508_1
+  - libgcc=15.1.0=h767d61c_3
+  - libgcc-ng=15.1.0=h69a702a_3
+  - libgomp=15.1.0=h767d61c_3
+  - libiconv=1.18=h4ce23a2_1
+  - libstdcxx=15.1.0=h8f9b012_3
+  - libstdcxx-ng=15.1.0=h4852527_3
+  - m4=1.4.20=hb9d3cd8_0
+prefix: /home/toni/compile/vmd_extensions/venv
