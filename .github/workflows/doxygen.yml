@@ -1,0 +1,15 @@
+name: Doxygen
+
+on: [push]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - name: Install Doxygen
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y doxygen=1.8.17-0ubuntu1
+    - name: Run Doxygen
+      run: doxygen Doxyfile
